@@ -16,19 +16,13 @@ Before you begin, ensure you have met the following requirements:
 * You have viewed the [research presentation](https://docs.google.com/presentation/d/1rwh6_adjJUo_Exlv7RHaZNYgRLOLf3WRMXClNw4T8TA/edit#slide=id.g229f4b2fec3_0_77).
 Make sure that this algorithm fits your use case!
 
-## Contributing to <project_name>
+## Contributing to nanotech
 
-1. Fork this repository.
-2. Create a branch: `git checkout -b <branch_name>`.
-3. Make your changes and commit them: `git commit -m '<commit_message>'`
-4. Push to the original branch: `git push origin <project_name>/<location>`
-5. Create the pull request.
-
-Alternatively see the GitHub documentation on [creating a pull request](https://help.github.com/en/github/collaborating-with-issues-and-pull-requests/creating-a-pull-request).
+See the GitHub documentation on [creating a pull request](https://help.github.com/en/github/collaborating-with-issues-and-pull-requests/creating-a-pull-request).
 
 ## Contact
 
-If you want to contact me you can reach me at <nitin.nazeer@gmail.com>.
+If you would like to contact me, please reach out at <nitin.nazeer@gmail.com>. I will try to best to respond to all emails.
 
 ## License
 
