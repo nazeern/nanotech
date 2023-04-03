@@ -6,7 +6,8 @@ This algorithm will be helpful if:
 * You want to predict the value associated with a new input curve
 
 For a practical example, see the graph below. This algorithm can predict the value of the dotted black line with high accuracy:
-![Noisy Data Curves](https://github.com/nazeern/nanotech/blob/main/images/noisyCurve.jpg?raw=true)
+
+![Noisy Data Curves](https://github.com/nazeern/nanotech/blob/main/images/noisyCurve.png?raw=true)
 
 ## Prerequisites
 
