@@ -13,7 +13,7 @@ For a practical example, see the graph below. This algorithm can predict the val
 
 Before you begin, ensure you have met the following requirements:
 * You have installed the latest versions of `jupyter notebook`, `numpy`, and `matplotlib`
-* You have viewed the [research presentation](https://docs.google.com/presentation/d/1rwh6_adjJUo_Exlv7RHaZNYgRLOLf3WRMXClNw4T8TA/edit#slide=id.g229f4b2fec3_0_77).
+* You have viewed the [research presentation](https://docs.google.com/presentation/d/1rwh6_adjJUo_Exlv7RHaZNYgRLOLf3WRMXClNw4T8TA/edit?usp=sharing).
 Make sure that this algorithm fits your use case!
 
 ## Contributing to nanotech
