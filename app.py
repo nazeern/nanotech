@@ -93,7 +93,7 @@ class SimRC(param.Parameterized):
                                  y=['Voltage (V)', 'Current (A)'], 
                                  subplots=True,
                                  shared_axes=False,
-                                 width=600, height=300)
+                                 height=300, responsive=True)
     
     @param.depends('V_in', 'I_out')
     def view_dfts(self):
@@ -104,7 +104,7 @@ class SimRC(param.Parameterized):
         return df.hvplot(y=['Voltage Amplitude (V)', 'Current Amplitude (A)'], 
                                  subplots=True,
                                  shared_axes=False,
-                                 width=600, height=300)
+                                 height=300, responsive=True)
     
     
     
