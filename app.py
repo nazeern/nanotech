@@ -1,5 +1,6 @@
 import numpy as np
-import matplotlib.pyplot as plt
+import hvplot.pandas
+import pandas as pd
 import panel as pn
 import param
 pn.extension(sizing_mode="stretch_width", throttled=True)
@@ -83,34 +84,25 @@ class SimRC(param.Parameterized):
     
     @param.depends('V_in', 'I_out')
     def view_plots(self):
-        fig, ax = plt.subplots(2, 1, constrained_layout=True)
-
-        fig.suptitle(f"V_in and I_out at freq = {self.freq}")
-        fig.supxlabel("Time (Seconds)")
-        ax[0].set_title(f"V_in")
-        ax[0].plot(self.t, self.V_in)
-
-        ax[1].set_title(f"I_out")
-        ax[1].plot(self.t, self.I_out)
-        plt.close()
-        return fig
+        df = pd.DataFrame()
+        df["Time (Sec)"] = pd.Series(self.t)
+        df["Voltage (V)"] = pd.Series(self.V_in)
+        df["Current (A)"] = pd.Series(self.I_out)
+        
+        return df.hvplot(x='Time (Sec)', 
+                                 y=['Voltage (V)', 'Current (A)'], 
+                                 subplots=True,
+                                 shared_axes=False)
     
     @param.depends('V_in', 'I_out')
     def view_dfts(self):
-        fig, ax = plt.subplots(2, 1, constrained_layout=True)
+        df = pd.DataFrame()
+        df["Voltage Amplitude (V)"] = pd.Series(self.V_dft)
+        df["Current Amplitude (A)"] = pd.Series(self.I_dft)
         
-
-        fig.suptitle(f"Fourier Transform of V_in and I_out")
-        fig.supxlabel("Frequency (Hz)")
-        fig.supylabel("Amplitude")
-
-        ax[0].set_title(f"V_in")
-        ax[0].stem(self.V_dft)
-
-        ax[1].set_title(f"I_out")
-        ax[1].stem(self.I_dft)
-        plt.close()
-        return fig
+        return df.hvplot(y=['Voltage Amplitude (V)', 'Current Amplitude (A)'], 
+                                 subplots=True,
+                                 shared_axes=False,)
     
     
     
@@ -151,7 +143,7 @@ m_card = pn.Card(message)
 
 Z_card = pn.Card(simRC.view_Z, simRC.view_Z_calc)
 
-plots = pn.Row(
+plots = pn.Column(
           simRC.view_plots,
           simRC.view_dfts)
 
