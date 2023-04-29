@@ -1,0 +1,5 @@
+hvplot==0.8.2
+numpy==1.23.5
+pandas==1.4.2
+panel==0.14.3
+param==1.12.3
