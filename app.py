@@ -42,7 +42,7 @@ class SimRC(param.Parameterized):
     
     @param.depends('freq', 'R', 'nC', watch=True)
     def set_Z(self):
-        C = self.nC * 10e-9
+        C = self.nC * 1e-9
         self.Z = abs(complex(self.R, -1/(self.freq*C)))
       
     @param.depends('cycle_num', 'freq', watch=True)
