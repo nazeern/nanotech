@@ -60,19 +60,22 @@ class SimRC(param.Parameterized):
     amp = 3.3 / 2
     
     # Frequency & Amplitude of sin wave
-    freq = param.Integer(default=1, bounds=(1, 10000), label="Frequency (Hz)")
+    freq = param.Integer(default=1, bounds=(1, 100000), label="Frequency (Hz)")
 
     # Desired number of wave oscillations
     cycle_num = param.Integer(default=1, bounds=(1, 10), label="Number of Cycles")
 
     # Resistance in Ohms
-    R = param.Integer(default=1, bounds=(1, 10000), label="Resistance (Ohms)")
+    R = param.Integer(default=1, bounds=(1, 80000), label="Resistance (Ohms)")
 
     # Capacitance in Nanofarads
     nC = param.Integer(default=1, bounds=(1, 1000), label="Capacitance (nF)")
     
+    # Variable Resistor Rf
+    Rf = param.Integer(default=1, bounds=(1, 80000), label="Feedback Resistor (Ohms)")
+    
     # Expected impedance
-    Z = 0
+    Z = -1
     
     # Input Voltage Wave
     V_in = np.array([0])
@@ -83,15 +86,18 @@ class SimRC(param.Parameterized):
     # Output Current Wave
     I_out = np.array([0])
     
+    # Output Voltage Wave
+    V_out = np.array([0])
+    
     V_dft = I_dft = np.array([0])
     V_amp = I_amp = 0
     
     # Calculated Impedance
-    Z_calc = 0
+    Z_calc = -1
     
     @param.depends('freq', 'R', 'nC', watch=True)
     def set_Z(self):
-        C = self.nC * 1e-9
+        C = self.nC * 10e-9
         self.Z = abs(complex(self.R, -1/(self.freq*C)))
       
     @param.depends('cycle_num', 'freq', watch=True)
@@ -122,6 +128,12 @@ class SimRC(param.Parameterized):
         
         self.Z_calc = self.V_amp / self.I_amp
         
+    @param.depends('Rf', 'V_in', 'Z', watch=True)
+    def set_V_out(self):
+        self.V_out = self.V_in * (1 + self.Rf / self.Z)
+        self.V_out[self.V_out > 12] = 12
+        self.V_out[self.V_out < -12] = -12
+            
 
     @param.depends('Z')
     def view_Z(self):
@@ -135,17 +147,26 @@ class SimRC(param.Parameterized):
     def view_plots(self):
         df = pd.DataFrame()
         df["Time (Sec)"] = pd.Series(self.t)
-        df["Voltage (V)"] = pd.Series(self.V_in)
+        df["Voltage In (V)"] = pd.Series(self.V_in)
         df["Current (A)"] = pd.Series(self.I_out)
+        df["Voltage Out (V)"] = pd.Series(self.V_out)
         
-        return df.hvplot(x='Time (Sec)', 
-                                 y=['Voltage (V)', 'Current (A)'], 
-                                 subplots=True,
-                                 shared_axes=False,
-                                 height=300, responsive=True)
+        voltages = df.hvplot(x='Time (Sec)', 
+                         y=['Voltage In (V)', 'Voltage Out (V)'],
+                        title='Input and Output Voltage',
+                        shared_axes=False,
+                         height=300, responsive=True)
+        current = df.hvplot(x='Time (Sec)', 
+                         y='Current (A)', 
+                         title='Output Current',
+                         subplots=True,
+                         shared_axes=False,
+                         height=300, responsive=True)
+        return (voltages + current).cols(1)
     
     @param.depends('V_in', 'I_out')
     def view_dfts(self):
+        
         df = pd.DataFrame()
         df["Voltage Amplitude (V)"] = pd.Series(self.V_dft)
         df["Current Amplitude (A)"] = pd.Series(self.I_dft)
@@ -153,7 +174,7 @@ class SimRC(param.Parameterized):
         return df.hvplot(y=['Voltage Amplitude (V)', 'Current Amplitude (A)'], 
                                  subplots=True,
                                  shared_axes=False,
-                                 height=300, responsive=True)
+                                height=300, responsive=True).cols(1)
     
     
     
@@ -194,13 +215,17 @@ m_card = pn.Card(message)
 
 Z_card = pn.Card(simRC.view_Z, simRC.view_Z_calc)
 
-plots = pn.Column(
-          simRC.view_plots,
-          simRC.view_dfts)
+tabs = pn.Tabs(
+    ('Waveforms', simRC.view_plots),
+    ('Fourier Transform', simRC.view_dfts)
+)
+# plots = pn.Row(
+#           simRC.view_plots,
+#           simRC.view_dfts)
 
 bootstrap.main.append(m_card)
 bootstrap.main.append(Z_card)
-bootstrap.main.append(plots)
+bootstrap.main.append(tabs)
 
 bootstrap.servable()
 
