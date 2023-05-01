@@ -116,7 +116,7 @@ class SimRC(param.Parameterized):
     def set_I_out(self):
         
         phase = np.angle(- (self.amp / self.Z)) + np.pi
-        I_amp = - self.amp / abs(self.Z)
+        I_amp = self.amp / abs(self.Z)
         self.I_out = I_amp * np.sin(self.freq*(2*np.pi*self.t) - phase)
         
     @param.depends('V_in', 'I_out', watch=True)
