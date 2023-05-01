@@ -11,19 +11,19 @@ class SimRC(param.Parameterized):
     amp = 3.3 / 2
     
     # Frequency & Amplitude of sin wave
-    freq = param.Integer(default=1, bounds=(1, 100000), label="Frequency (Hz)")
+    freq = param.Integer(default=1000, bounds=(1, 100000), label="Frequency (Hz)")
 
     # Desired number of wave oscillations
-    cycle_num = param.Integer(default=1, bounds=(1, 10), label="Number of Cycles")
+    cycle_num = param.Integer(default=2, bounds=(1, 10), label="Number of Cycles")
 
     # Resistance in Ohms
-    R = param.Integer(default=1, bounds=(1, 80000), label="Resistance (Ohms)")
+    R = param.Integer(default=100, bounds=(1, 80000), label="Resistance (Ohms)")
 
     # Capacitance in Nanofarads
-    nC = param.Integer(default=1, bounds=(1, 1000), label="Capacitance (nF)")
+    nC = param.Integer(default=1000, bounds=(1, 1000), label="Capacitance (nF)")
     
     # Variable Resistor Rf
-    Rf = param.Integer(default=1, bounds=(1, 80000), label="Feedback Resistor (Ohms)")
+    Rf = param.Integer(default=1000, bounds=(1, 80000), label="Feedback Resistor (Ohms)")
     
     # Expected impedance
     Z = -1
@@ -48,10 +48,10 @@ class SimRC(param.Parameterized):
     
     @param.depends('freq', 'R', 'nC', watch=True)
     def set_Z(self):
-        C = self.nC * 10e-9
-        self.Z = abs(complex(self.R, -1/(self.freq*C)))
+        C = self.nC * 1e-9
+        self.Z = complex(self.R, -1/(self.freq*C))
       
-    @param.depends('cycle_num', 'freq', watch=True)
+    @param.depends('cycle_num', 'freq', 'R', 'nC', 'Rf', watch=True)
     def set_V_in(self):
         # Duration of sin wave in seconds
         duration = self.cycle_num / self.freq
@@ -60,28 +60,34 @@ class SimRC(param.Parameterized):
         samp_rate = self.freq * 100
         
         samp_num = int(duration * samp_rate)
-        self.t = np.linspace(0, duration, num=samp_num)
+        self.t = np.arange(0, duration, duration / samp_num)
         self.V_in = self.amp * np.sin(self.freq*(2*np.pi*self.t))
         
-    @param.depends('V_in', watch=True)
+    @param.depends('V_in', 'Z', watch=True)
     def set_I_out(self):
-        self.I_out = (- self.V_in) / self.Z
+        
+        phase = np.angle(- (self.amp / self.Z)) + np.pi
+        I_amp = - self.amp / abs(self.Z)
+        self.I_out = I_amp * np.sin(self.freq*(2*np.pi*self.t) - phase)
         
     @param.depends('V_in', 'I_out', watch=True)
     def set_dfts(self):
-        V_dft = 2 * np.abs(np.fft.fft(self.V_in)) / len(self.V_in)
-        self.V_dft = V_dft[:len(V_dft)//2]
-        self.V_amp = np.max(self.V_dft)
         
-        I_dft = 2 * np.abs(np.fft.fft(self.I_out)) / len(self.I_out)
+        V_dft = 2 * np.fft.fft(self.V_in) / len(self.V_in)
+        self.V_dft = V_dft[:len(V_dft)//2]
+        self.V_amp = np.max(abs(self.V_dft))
+        
+        I_dft = 2 * np.fft.fft(self.I_out) / len(self.I_out)
         self.I_dft = I_dft[:len(I_dft)//2]
-        self.I_amp = np.max(self.I_dft)
+        I_crit = np.argmax(abs(self.I_dft))
+        self.I_amp = self.I_dft[I_crit]
         
         self.Z_calc = self.V_amp / self.I_amp
+        self.Z_calc = complex(-self.Z_calc.imag, -self.Z_calc.real)
         
-    @param.depends('Rf', 'V_in', 'Z', watch=True)
+    @param.depends('Rf', 'V_in', 'I_out', watch=True)
     def set_V_out(self):
-        self.V_out = self.V_in * (1 + self.Rf / self.Z)
+        self.V_out = self.V_in - self.I_out * self.Rf
         self.V_out[self.V_out > 12] = 12
         self.V_out[self.V_out < -12] = -12
             
@@ -94,7 +100,7 @@ class SimRC(param.Parameterized):
     def view_Z_calc(self):
         return pn.pane.Markdown(f"#### Calculated Impedance: {self.Z_calc}")
     
-    @param.depends('V_in', 'I_out')
+    @param.depends('V_in', 'I_out', 'V_out')
     def view_plots(self):
         df = pd.DataFrame()
         df["Time (Sec)"] = pd.Series(self.t)
@@ -112,15 +118,17 @@ class SimRC(param.Parameterized):
                          title='Output Current',
                          subplots=True,
                          shared_axes=False,
+                         color="green",
+                         legend=True,
                          height=300, responsive=True)
         return (voltages + current).cols(1)
     
-    @param.depends('V_in', 'I_out')
+    @param.depends('V_dft', 'I_dft')
     def view_dfts(self):
         
         df = pd.DataFrame()
-        df["Voltage Amplitude (V)"] = pd.Series(self.V_dft)
-        df["Current Amplitude (A)"] = pd.Series(self.I_dft)
+        df["Voltage Amplitude (V)"] = pd.Series(abs(self.V_dft))
+        df["Current Amplitude (A)"] = pd.Series(abs(self.I_dft))
         
         return df.hvplot(y=['Voltage Amplitude (V)', 'Current Amplitude (A)'], 
                                  subplots=True,
