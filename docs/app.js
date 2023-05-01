@@ -98,7 +98,8 @@ class SimRC(param.Parameterized):
     @param.depends('freq', 'R', 'nC', watch=True)
     def set_Z(self):
         C = self.nC * 1e-9
-        self.Z = complex(self.R, -1/(self.freq*C))
+        w = 2*np.pi*self.freq
+        self.Z = complex(self.R, -1/(w*C))
       
     @param.depends('cycle_num', 'freq', 'R', 'nC', 'Rf', watch=True)
     def set_V_in(self):
@@ -132,7 +133,7 @@ class SimRC(param.Parameterized):
         self.I_amp = self.I_dft[I_crit]
         
         self.Z_calc = self.V_amp / self.I_amp
-        self.Z_calc = complex(-self.Z_calc.imag, -self.Z_calc.real)
+        self.Z_calc = complex(self.Z_calc.imag, self.Z_calc.real)
         
     @param.depends('Rf', 'V_in', 'I_out', watch=True)
     def set_V_out(self):
@@ -168,7 +169,6 @@ class SimRC(param.Parameterized):
                          subplots=True,
                          shared_axes=False,
                          color="green",
-                         legend=True,
                          height=300, responsive=True)
         return (voltages + current).cols(1)
     
@@ -179,7 +179,7 @@ class SimRC(param.Parameterized):
         df["Voltage Amplitude (V)"] = pd.Series(abs(self.V_dft))
         df["Current Amplitude (A)"] = pd.Series(abs(self.I_dft))
         
-        return df.hvplot(y=['Voltage Amplitude (V)', 'Current Amplitude (A)'], 
+        return df.hvplot(y=['Voltage Amplitude (V)', 'Current Amplitude (A)'],
                                  subplots=True,
                                  shared_axes=False,
                                 height=300, responsive=True).cols(1)
