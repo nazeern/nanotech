@@ -17,9 +17,9 @@ st.title("Nano-integrated Technology \
 
 with st.sidebar:
 
-    selected = option_menu(
+    menu_sel = option_menu(
         "Main Menu",
-        ["Sine Wave", "Triangle Wave"],
+        ["Simulate", "Preprocess", "Train", "Predict"],
         menu_icon="hexagon",
         default_index=0,
     )
@@ -27,18 +27,6 @@ with st.sidebar:
     st.info("This software enables accurate simulation \
             of a dynamic RC circuit when stimulated \
             by sine or triangle waves.")
-    
-    freq = st.number_input(label="Frequency (Hz)", min_value=100,
-                    max_value=100_000_000, value=1000, step=100)
-    cycle_num = st.number_input(label="Number of Cycles", min_value=1,
-                    max_value=10, value=3, step=1)
-    R = st.number_input(label="Resistance (Ohms)", min_value=1,
-                    max_value=80_000, value=100, step=100)
-    nC = st.number_input(label="Capacitance (nF)", min_value=1,
-                    max_value=1000, value=1000, step=100)
-    C = nC * 1e-9
-    Rf = st.number_input(label="Feedback Resistor (Ohms)", min_value=0,
-                    max_value=80_000, value=1000, step=100)
 
 @st.cache_data
 def generate_wave(freq, amp, form="sin", cycle_num=None, duration=None, samp_rate=None):
@@ -127,7 +115,7 @@ def dual_axis_fig(x, y, title, xtitle, yname, ylabel):
     )
 
     # Set x-axis title
-    fig.update_xaxes(title_text=xtitle)
+    fig.update_xaxes(title_text=xtitle, showgrid=True)
 
     return fig
 
@@ -161,109 +149,135 @@ def get_Vr_out(t, cycle_num, freq, amp, R, C):
         sgn = -sgn
     return Vr
 
-V_amp = 3.3 / 2
-w = 2 * np.pi * freq
-Z = complex(R, -1/(w*C))
- 
-if selected == "Sine Wave":
-    with st.expander("Important Sine Wave Details"):
-        """
-        All calculations were performed based on the circuit
-        schematic. Note that the current is in the opposite
-        direction compared to a typical RC System, which causes
-        I_out to appear flipped from its expected value.
+if menu_sel == "Simulate":
 
-        We can observe that, in a capacitive circuit, the output
-        current leads the input voltage. This means that the
-        current peak appears to the left of the voltage
-        peak. Again, remember that the current I_out is flipped.
+    with st.sidebar:
+        freq = st.number_input(label="Frequency (Hz)", min_value=100,
+                        max_value=100_000_000, value=1000, step=100)
+        cycle_num = st.number_input(label="Number of Cycles", min_value=1,
+                        max_value=10, value=3, step=1)
+        R = st.number_input(label="Resistance (Ohms)", min_value=1,
+                        max_value=80_000, value=100, step=100)
+        nC = st.number_input(label="Capacitance (nF)", min_value=1,
+                        max_value=1000, value=1000, step=100)
+        C = nC * 1e-9
+        Rf = st.number_input(label="Feedback Resistor (Ohms)", min_value=0,
+                        max_value=80_000, value=1000, step=100)
 
-        V_out is implemented to rail at 3.3V. Use the feedback
-        resistor Rf to influence V_out.
-        """
+    V_amp = 3.3 / 2
+    w = 2 * np.pi * freq
+    Z = complex(R, -1/(w*C))
 
-    with st.expander("Mathematical Justifications"):
-        r'''
-        From first principles, we accept the following propositions:
-        $$\\V_{in} - V_{out} = iR_{f}\\
-            Z = R + \frac{1}{j \omega C} = R - \frac{1}{\omega C}j\\
-            V_g-V_{in}=iZ \implies -\frac{V_{in}}{Z}=i\\
-            \text{Current Phase} = \texttt{angle}(-\frac{V_{in}}{Z})\\
-            \text{Current Amplitude} = \texttt{mag}(-\frac{V_{in}}{Z})
-        $$
-        Notice that the phase angle is negative because the current
-        leads voltage in a capacitive circuit.
+    wave_sel = option_menu(
+        "", 
+        ["Sine Wave", "Triangle Wave"],
+        orientation="horizontal"
+    )
+    if wave_sel == "Sine Wave":
+        with st.expander("Important Sine Wave Details"):
+            """
+            All calculations were performed based on the circuit
+            schematic. Note that the current is in the opposite
+            direction compared to a typical RC System, which causes
+            I_out to appear flipped from its expected value.
 
-        Decreasing frequency and capacitance increases the phase shift,
-        while increasing resistance has the opposite effect.
-        '''
+            We can observe that, in a capacitive circuit, the output
+            current leads the input voltage. This means that the
+            current peak appears to the left of the voltage
+            peak. Again, remember that the current I_out is flipped.
 
-    with st.spinner("Calculating..."):
-        t, V_in = generate_wave(freq, V_amp, form="sin", 
-                                cycle_num=cycle_num)
-        
-        phase = np.angle(- (V_amp / Z))
-        I_amp = V_amp / abs(Z)
-        
-        I_out = I_out_sin(t, freq, I_amp, phase)
-        V_out = get_V_out(V_in, I_out, Rf)
-        fig = dual_axis_fig(t, [V_in, V_out, I_out], 
-                            "V_in and I_out: Sine Wave", "Time", 
-                            ["V_in", "V_out", "I_out"], 
-                            ["Volts", "Volts", "Amps"])
-        st.plotly_chart(fig, use_container_width=True)
+            V_out is implemented to rail at 3.3V. Use the feedback
+            resistor Rf to influence V_out.
+            """
+
+        with st.expander("Mathematical Justifications"):
+            r'''
+            From first principles, we accept the following propositions:
+            $$\\V_{in} - V_{out} = iR_{f}\\
+                Z = R + \frac{1}{j \omega C} = R - \frac{1}{\omega C}j\\
+                V_g-V_{in}=iZ \implies -\frac{V_{in}}{Z}=i\\
+                \text{Current Phase} = \texttt{angle}(-\frac{V_{in}}{Z})\\
+                \text{Current Amplitude} = \texttt{mag}(-\frac{V_{in}}{Z})
+            $$
+            Notice that the phase angle is negative because the current
+            leads voltage in a capacitive circuit.
+
+            Decreasing frequency and capacitance increases the phase shift,
+            while increasing resistance has the opposite effect.
+            '''
+
+        with st.spinner("Calculating..."):
+            t, V_in = generate_wave(freq, V_amp, form="sin", 
+                                    cycle_num=cycle_num)
+            
+            phase = np.angle(- (V_amp / Z))
+            I_amp = V_amp / abs(Z)
+            
+            I_out = I_out_sin(t, freq, I_amp, phase)
+            V_out = get_V_out(V_in, I_out, Rf)
+            fig = dual_axis_fig(t, [V_in, V_out, I_out], 
+                                "V_in and I_out: Sine Wave", "Time", 
+                                ["V_in", "V_out", "I_out"], 
+                                ["Volts", "Volts", "Amps"])
+            st.plotly_chart(fig, use_container_width=True)
 
 
-if selected == "Triangle Wave":
-    with st.expander("Important Triangle Wave Details"):
-        """
-        All calculations were performed based on the circuit
-        schematic. Note that the current is in the opposite
-        direction compared to a typical RC System, which causes
-        I_out to appear flipped from its expected value.
+    if wave_sel == "Triangle Wave":
+        with st.expander("Important Triangle Wave Details"):
+            """
+            All calculations were performed based on the circuit
+            schematic. Note that the current is in the opposite
+            direction compared to a typical RC System, which causes
+            I_out to appear flipped from its expected value.
 
-        This implementation uses the fact that a triangle wave
-        is simply a sequence of rising and falling ramp inputs. 
-        Therefore, we can determine the voltage across the resistor
-        by solving a differential equation with various initial states.
-        Note that the output current is directly related to this resistor 
-        voltage via Ohm's Law. 
+            This implementation uses the fact that a triangle wave
+            is simply a sequence of rising and falling ramp inputs. 
+            Therefore, we can determine the voltage across the resistor
+            by solving a differential equation with various initial states.
+            Note that the output current is directly related to this resistor 
+            voltage via Ohm's Law. 
 
-        Because there is no identifiable pattern, each half cycle is
-        generated using a switching for loop. This reveals interesting 
-        patterns, such as a buildup charging effect on V_out. I also provide
-        Vc, the capacitor voltage, as a sanity check.
+            Because there is no identifiable pattern, each half cycle is
+            generated using a switching for loop. This reveals interesting 
+            patterns, such as a buildup charging effect on V_out. I also provide
+            Vc, the capacitor voltage, as a sanity check.
 
-        V_out is implemented to rail at 3.3V. Use the feedback
-        resistor Rf to influence V_out.
-        """
+            V_out is implemented to rail at 3.3V. Use the feedback
+            resistor Rf to influence V_out.
+            """
 
-    with st.expander("Mathematical Justifications"):
-        st.warning("Under construction")
-        # r'''
-        # Under construction.
-        # '''
+        with st.expander("Mathematical Justifications"):
+            st.warning("Under construction")
 
-    with st.spinner("Calculating..."):
-        t, V_in = generate_wave(freq, V_amp, form="triangle",
-                                cycle_num=cycle_num)
-        
-        Vr = get_Vr_out(t, cycle_num, freq, V_amp, R, C)
-        I_out = Vr / R
-        Vc = V_in - Vr
-        V_out = get_V_out(V_in, I_out, Rf)
+        with st.spinner("Calculating..."):
+            t, V_in = generate_wave(freq, V_amp, form="triangle",
+                                    cycle_num=cycle_num)
+            
+            Vr = get_Vr_out(t, cycle_num, freq, V_amp, R, C)
+            I_out = Vr / R
+            Vc = V_in - Vr
+            V_out = get_V_out(V_in, I_out, Rf)
 
-        fig1 = dual_axis_fig(t, [V_in, V_out, I_out], 
-                            "Triangle Wave Circuit Readings", "Time",
-                            ["V_in", "V_out", "I_out"],
-                            ["Volts", "Volts", "Amps"])
-        st.plotly_chart(fig1, use_container_width=True)
+            fig1 = dual_axis_fig(t, [V_in, V_out, I_out], 
+                                "Triangle Wave Circuit Readings", "Time",
+                                ["V_in", "V_out", "I_out"],
+                                ["Volts", "Volts", "Amps"])
+            st.plotly_chart(fig1, use_container_width=True)
 
-        fig2 = dual_axis_fig(t, [Vc],
-                            "Voltage Across Capacitor", "Time",
-                            ["Vc"],
-                            ["Volts"])
-        st.plotly_chart(fig2, use_container_width=True)
+            fig2 = dual_axis_fig(t, [Vc],
+                                "Voltage Across Capacitor", "Time",
+                                ["Vc"],
+                                ["Volts"])
+            st.plotly_chart(fig2, use_container_width=True)
     
-    
+elif menu_sel == "Preprocess":
 
+    st.warning("Under construction...")
+
+elif menu_sel == "Train":
+
+    st.warning("Under construction...")
+
+elif menu_sel == "Predict":
+
+    st.warning("Under construction...")
