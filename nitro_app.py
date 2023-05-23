@@ -247,7 +247,44 @@ if menu_sel == "Simulate":
             """
 
         with st.expander("Mathematical Justifications"):
-            st.warning("Under construction")
+            r'''
+            Notice that $V_{in}$ is a sequence of rising and falling
+            ramp inputs. Therefore, for a ramp input, $V_{in}(t) = 
+            \alpha t - A$, where $\alpha = 4fA$ and $A = 
+            \frac{V_{max}-V_{min}}{2}$. This can be derived using 
+            basic slope and intercept techniques. Now, we derive the
+            voltage across the resistor, $V_R$:
+            $$
+            V_{in} = V_R + V_C \\
+            V_{in} = \frac{1}{C}\int_0^ti dt + iR \\
+            \frac{d}{dt}V_{in} = \frac{i}{C} + \frac{d}{dt}V_R \\
+            = \frac{V_R}{RC}+\frac{d}{dt}V_R=\pm\alpha \\ 
+            \frac{dV_R}{dt} = \frac{\alpha RC - V_R}{RC} \\
+            \int\frac{1}{\alpha RC - V_R}dV_R = \int\frac{1}{RC}dt
+            $$
+            Now, integrate, letting $B$ be the integration constant
+            as $C$ is reserved for capacitance:
+            $$
+            ln(\alpha RC - V_R) + B = -\frac{t}{RC} \\
+            V_R = \alpha RC - Be^{-\frac{t}{RC}}
+            $$
+            Now, we find B using the initial condition of $V_R = V_0$ at
+            time $t = 0$. Substituting, we find:
+            $$
+            V_0 = \alpha RC - B \implies B = \alpha RC + V_0
+            $$
+            Now, just plug B into the original equation:
+            $$
+            V_R = \alpha RC - (\alpha RC - V_0)e^{-\frac{t}{RC}}
+            $$
+            After this, calculating $I_{out}$, $V_{out}$ and $V_C$ are 
+            simple:
+            $$
+            V_C = V_{in} - V_R \\
+            I_{out} = -\frac{V_R}{R} \\
+            V_{out} = V_{in} - I_{out}R_f
+            $$
+            '''
 
         with st.spinner("Calculating..."):
             t, V_in = generate_wave(freq, V_amp, form="triangle",
