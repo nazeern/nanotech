@@ -198,19 +198,20 @@ if selected == "Sine Wave":
         while increasing resistance has the opposite effect.
         '''
 
-    t, V_in = generate_wave(freq, V_amp, form="sin", 
-                            cycle_num=cycle_num)
-    
-    phase = np.angle(- (V_amp / Z))
-    I_amp = V_amp / abs(Z)
-    
-    I_out = I_out_sin(t, freq, I_amp, phase)
-    V_out = get_V_out(V_in, I_out, Rf)
-    fig = dual_axis_fig(t, [V_in, V_out, I_out], 
-                        "V_in and I_out: Sine Wave", "Time", 
-                        ["V_in", "V_out", "I_out"], 
-                        ["Volts", "Volts", "Amps"])
-    st.plotly_chart(fig, use_container_width=True)
+    with st.spinner("Calculating..."):
+        t, V_in = generate_wave(freq, V_amp, form="sin", 
+                                cycle_num=cycle_num)
+        
+        phase = np.angle(- (V_amp / Z))
+        I_amp = V_amp / abs(Z)
+        
+        I_out = I_out_sin(t, freq, I_amp, phase)
+        V_out = get_V_out(V_in, I_out, Rf)
+        fig = dual_axis_fig(t, [V_in, V_out, I_out], 
+                            "V_in and I_out: Sine Wave", "Time", 
+                            ["V_in", "V_out", "I_out"], 
+                            ["Volts", "Volts", "Amps"])
+        st.plotly_chart(fig, use_container_width=True)
 
 
 if selected == "Triangle Wave":
@@ -243,25 +244,26 @@ if selected == "Triangle Wave":
         # Under construction.
         # '''
 
-    t, V_in = generate_wave(freq, V_amp, form="triangle",
-                            cycle_num=cycle_num)
-    
-    Vr = get_Vr_out(t, cycle_num, freq, V_amp, R, C)
-    I_out = Vr / R
-    Vc = V_in - Vr
-    V_out = get_V_out(V_in, I_out, Rf)
+    with st.spinner("Calculating..."):
+        t, V_in = generate_wave(freq, V_amp, form="triangle",
+                                cycle_num=cycle_num)
+        
+        Vr = get_Vr_out(t, cycle_num, freq, V_amp, R, C)
+        I_out = Vr / R
+        Vc = V_in - Vr
+        V_out = get_V_out(V_in, I_out, Rf)
 
-    fig1 = dual_axis_fig(t, [V_in, V_out, I_out], 
-                        "V_in and I_out: Triangle Wave", "Time",
-                        ["V_in", "V_out", "I_out"],
-                        ["Volts", "Volts", "Amps"])
-    st.plotly_chart(fig1, use_container_width=True)
+        fig1 = dual_axis_fig(t, [V_in, V_out, I_out], 
+                            "Triangle Wave Circuit Readings", "Time",
+                            ["V_in", "V_out", "I_out"],
+                            ["Volts", "Volts", "Amps"])
+        st.plotly_chart(fig1, use_container_width=True)
 
-    fig2 = dual_axis_fig(t, [Vc],
-                         "Vc", "Time",
-                         ["Vc"],
-                         ["Volts"])
-    st.plotly_chart(fig2, use_container_width=True)
+        fig2 = dual_axis_fig(t, [Vc],
+                            "Voltage Across Capacitor", "Time",
+                            ["Vc"],
+                            ["Volts"])
+        st.plotly_chart(fig2, use_container_width=True)
     
     
 
