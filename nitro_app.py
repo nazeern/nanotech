@@ -17,6 +17,8 @@ st.title("Nano-integrated Technology \
 
 with st.sidebar:
 
+    st.image("images/logo.png")
+
     menu_sel = option_menu(
         "Main Menu",
         ["Simulate", "Preprocess", "Train", "Predict"],
@@ -149,9 +151,17 @@ def get_Vr_out(t, cycle_num, freq, amp, R, C):
         sgn = -sgn
     return Vr
 
+def digitize(wave, num_levels):
+    V_amp = 1.65
+    
+    levels = 2 * V_amp * np.arange(num_levels + 1) / num_levels
+    return np.digitize(wave, levels) * (2 * V_amp / num_levels)
+
 if menu_sel == "Simulate":
 
     with st.sidebar:
+        digit = st.checkbox("Digitize V_out")
+
         freq = st.number_input(label="Frequency (Hz)", min_value=100,
                         max_value=100_000_000, value=1000, step=100)
         cycle_num = st.number_input(label="Number of Cycles", min_value=1,
@@ -188,6 +198,9 @@ if menu_sel == "Simulate":
 
             V_out is implemented to rail at 3.3V. Use the feedback
             resistor Rf to influence V_out.
+
+            Selecting "Digitize V_out" will alter the output of V_out 
+            between 0.0 and 3.3V.
             """
 
         with st.expander("Mathematical Justifications"):
@@ -215,6 +228,9 @@ if menu_sel == "Simulate":
             
             I_out = I_out_sin(t, freq, I_amp, phase)
             V_out = get_V_out(V_in, I_out, Rf)
+            if digit:
+                V_out = digitize(V_out + V_amp, 4096)
+
             fig = dual_axis_fig(t, [V_in, V_out, I_out], 
                                 "V_in and I_out: Sine Wave", "Time", 
                                 ["V_in", "V_out", "I_out"], 
@@ -244,6 +260,9 @@ if menu_sel == "Simulate":
 
             V_out is implemented to rail at 3.3V. Use the feedback
             resistor Rf to influence V_out.
+
+            Selecting "Digitize V_out" will alter the output of V_out 
+            between 0.0 and 3.3V.
             """
 
         with st.expander("Mathematical Justifications"):
@@ -294,6 +313,8 @@ if menu_sel == "Simulate":
             I_out = Vr / R
             Vc = V_in - Vr
             V_out = get_V_out(V_in, I_out, Rf)
+            if digit:
+                V_out = digitize(V_out + V_amp, 4096)
 
             fig1 = dual_axis_fig(t, [V_in, V_out, I_out], 
                                 "Triangle Wave Circuit Readings", "Time",
@@ -311,9 +332,17 @@ elif menu_sel == "Preprocess":
 
     st.warning("Under construction...")
 
+
+
 elif menu_sel == "Train":
 
     st.warning("Under construction...")
+
+    # train_sel = option_menu(
+    #     "", 
+    #     ["Use Sample Data", "Use Preprocessed Data"],
+    #     orientation="horizontal"
+    # )
 
 elif menu_sel == "Predict":
 
