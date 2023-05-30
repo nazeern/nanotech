@@ -237,10 +237,11 @@ elif menu_sel == "Train":
                                   value=0.18, step=0.01)
 
         # Average N samples of noise
-        noises = avg_noise(n_samples, noise_at_freq, m, n)
-        X_true = generate_experiment(concs, freqs=freqs, weights=weights)
-        y_true = np.array(concs)
-        X = X_true + train_noise_scale * noises
+        with st.spinner("Simulating full experiment..."):
+            noises = avg_noise(n_samples, noise_at_freq, m, n)
+            X_true = generate_experiment(concs, freqs=freqs, weights=weights)
+            y_true = np.array(concs)
+            X = X_true + train_noise_scale * noises
 
         # Plotly graphs
         fig_true = plot_rows(X_true, freqs, y_true, label="conc=", xlabel="Freq", 
@@ -276,27 +277,33 @@ elif menu_sel == "Train":
         separate yeast sample.
         """)
 
+        st.info("""
+        Goal: Predict the sample concentration that generated the 
+        new impedance curve identified by the dashed black line.
+        """)
+
         f"""
         ### True Concentration: {true_conc}\n
         ### Algorithm Output: {agg_pred}
         ***
-
-        The dotted black line is the concentration to be predicted.
         """
+
+        # with st.expander("Important Details"):
 
         col1, col2 = st.columns(2)
         with col1:
             st.plotly_chart(fig_noisy, use_container_width=True)
 
         with col2:
-            st.plotly_chart(fig_true, use_container_width=False)
-
-    
+            st.plotly_chart(fig_true, use_container_width=True)
 
 
+    elif source_sel == "Simulated Data":
+        st.warning("Under construction...")
 
 
-
+    elif source_sel == "Uploaded Data":
+        st.warning("Under construction...")
 
 
 

@@ -290,7 +290,10 @@ def dual_axis_fig(x, y, title, xtitle, yname, ylabel):
 
     # Add figure title
     fig.update_layout(
-        title_text=title
+        title=dict(
+            text=title,
+            font=dict(size=28)
+        )
     )
 
     # Set x-axis title
@@ -310,7 +313,10 @@ def plot_rows(M, x, y, label="", xlabel="", ylabel="", title=""):
     
     # Add figure title
     fig.update_layout(
-        title_text=title,
+        title=dict(
+            text=title,
+            font=dict(size=28)
+        ),
         autosize=False, width=800, height=600
     )
     
