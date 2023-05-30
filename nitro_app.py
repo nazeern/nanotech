@@ -1,11 +1,10 @@
 import streamlit as st
 import numpy as np
-from scipy import signal
-import plotly.graph_objects as go
-from plotly.subplots import make_subplots
 import plotly.express as px
 from streamlit_option_menu import option_menu
 import warnings
+from utils.funcs import *
+
 
 st.set_page_config(page_title="Impedance Analyzer",
                    page_icon="images/logo.png",
@@ -17,8 +16,6 @@ st.title("Nano-integrated Technology \
 
 with st.sidebar:
 
-    st.image("images/logo.png")
-
     menu_sel = option_menu(
         "Main Menu",
         ["Simulate", "Preprocess", "Train", "Predict"],
@@ -29,133 +26,6 @@ with st.sidebar:
     st.info("This software enables accurate simulation \
             of a dynamic RC circuit when stimulated \
             by sine or triangle waves.")
-
-@st.cache_data
-def generate_wave(freq, amp, form="sin", cycle_num=None, duration=None, samp_rate=None):
-    """
-    Return the time domain t and values  for a wave of given
-    FREQUENCY, AMPLITUDE, and STYLE={"sin", "triangle"}
-    
-    Returns:
-    t: Time domain of the generated wave
-    vals: Output of the wave function
-    
-    Example:
-    >>> t, V_in = generate_wave(FREQ, AMP, CYCLE_NUM, "sin")
-    """
-    if duration:
-        cycle_num = freq * duration
-    elif cycle_num:
-        duration = cycle_num / freq
-    elif duration and cycle_num and (cycle_num != freq * duration):
-        raise ValueError(
-            f"{cycle_num} cycles at {freq} cycles per second is incompatible with \
-            duration {duration}"
-        )
-    else:
-        raise ValueError('Wave generator requires either "cycle_num" or "duration"')
-    
-    # Sampling rate of device (samples / sec)
-    if not samp_rate:
-        warnings.warn("A sampling rate has not been specified; defaulting to 100 samples per cycle")
-        samp_rate = freq * 100
-    
-    # Total number of samples
-    samp_num = int(duration * samp_rate)
-    
-    if form == "sin":
-        t = np.arange(0, duration, duration / samp_num)
-        vals = amp * np.sin(freq*(2*np.pi*t))
-        
-    elif form == "triangle":
-        t = np.arange(0, 1, 1 / samp_num) * duration
-        vals = amp * signal.sawtooth(2*np.pi*cycle_num*np.arange(0, 1, 1 / samp_num), 0.5)
-        
-    else:
-        raise ValueError('Pass in a valid wave form ("sin", "triangle")')
-    
-    return t, vals
-
-@st.cache_data
-def I_out_sin(t, freq, I_amp, phase):
-    return I_amp * np.sin(freq*(2*np.pi*t) + phase)
-
-@st.cache_data
-def get_V_out(V_in, I_out, Rf):
-    V_out = V_in - I_out * Rf
-    V_out[V_out > 3.3] = 3.3
-    V_out[V_out < -3.3] = -3.3
-    return V_out
-
-def dual_axis_fig(x, y, title, xtitle, yname, ylabel):
-    # Create figure with secondary y-axis
-    fig = make_subplots(specs=[[{"secondary_y": True}]])
-    n = len(y)
-
-    for i in range(n-1):
-        # Add traces
-        fig.add_trace(
-            go.Line(x=x, y=y[i], name=yname[i]),
-            secondary_y=False,
-        )
-
-        # Set y-axes titles
-        fig.update_yaxes(title_text=ylabel[i], secondary_y=False)
-    
-    # Add traces
-    fig.add_trace(
-        go.Line(x=x, y=y[n-1], name=yname[n-1]),
-        secondary_y=True,
-    )
-
-    # Set y-axes titles
-    fig.update_yaxes(title_text=ylabel[n-1], secondary_y=True)
-
-    # Add figure title
-    fig.update_layout(
-        title_text=title
-    )
-
-    # Set x-axis title
-    fig.update_xaxes(title_text=xtitle, showgrid=True)
-
-    return fig
-
-@st.cache_data
-def get_Vr(V0, t, freq, amp, sgn, R, C):
-    if sgn == 1:
-        a = 4*freq*amp
-    else:
-        a = -4*freq*amp
-    
-    B = a*R*C - V0
-    return a*R*C - B * np.exp(-t / (R * C))
-
-@st.cache_data
-def get_Vr_out(t, cycle_num, freq, amp, R, C):
-    # Values of voltage across resistor
-    Vr = np.zeros_like(t)
-
-    # Number of total samples
-    n = t.size
-
-    # Number of samples in each rising/falling window
-    k = n // cycle_num // 2
-
-    currV = 0
-    sgn = 1
-    t_slice = t[:k]
-    for w in range(cycle_num * 2):
-        Vr[w*k:w*k+k] = get_Vr(currV, t_slice, freq, amp, sgn, R, C)
-        currV = get_Vr(currV, t[k], freq, amp, sgn, R, C)
-        sgn = -sgn
-    return Vr
-
-def digitize(wave, num_levels):
-    V_amp = 1.65
-    
-    levels = 2 * V_amp * np.arange(num_levels + 1) / num_levels
-    return np.digitize(wave, levels) * (2 * V_amp / num_levels)
 
 if menu_sel == "Simulate":
 
@@ -328,21 +198,107 @@ if menu_sel == "Simulate":
                                 ["Volts"])
             st.plotly_chart(fig2, use_container_width=True)
     
+
 elif menu_sel == "Preprocess":
 
     st.warning("Under construction...")
 
 
-
 elif menu_sel == "Train":
 
-    st.warning("Under construction...")
+    source_sel = option_menu(
+        "Choose Input Source", 
+        ["Sample Data", "Simulated Data", "Uploaded Data"],
+        orientation="horizontal"
+    )
 
-    # train_sel = option_menu(
-    #     "", 
-    #     ["Use Sample Data", "Use Preprocessed Data"],
-    #     orientation="horizontal"
-    # )
+    if source_sel == "Sample Data":
+
+        # Sample data is loaded from .npy files
+        concs = [c / 100 for c in range(1, 100, 10)] + [1]
+        freqs = np.load("data/sample_model_freqs.npy", allow_pickle=True)
+        m = len(concs)
+        n = len(freqs)
+        
+        noise = np.load("data/sample_data_noise.npy", allow_pickle=True)
+        noise_at_freq = np.mean(noise, axis=0)
+
+        weights = np.load("data/sample_model_weights.npy", allow_pickle=True)
+
+        with st.sidebar:
+            train_noise_scale = st.slider("Training Noise Scale",
+                                          0.0, 1.0, value=0.4, step=0.01)
+            n_samples = st.slider("Number of Samples",
+                                  1, 64, value=9, step=1)
+            test_noise_scale = st.slider("Test Noise Scale",
+                                         0.0, 1.0, value=0.01, step=0.01)
+            true_conc = st.slider("True Concentration",
+                                  float(min(concs)), float(max(concs)), 
+                                  value=0.18, step=0.01)
+
+        # Average N samples of noise
+        noises = avg_noise(n_samples, noise_at_freq, m, n)
+        X_true = generate_experiment(concs, freqs=freqs, weights=weights)
+        y_true = np.array(concs)
+        X = X_true + train_noise_scale * noises
+
+        # Plotly graphs
+        fig_true = plot_rows(X_true, freqs, y_true, label="conc=", xlabel="Freq", 
+                  ylabel="Impedance", title="Actual Impedance vs. Concentration")
+        fig_noisy = plot_rows(X, freqs, y_true, label="conc=", xlabel="Freq", 
+                  ylabel="Impedance", title="Noisy Impedance vs. Concentration")
+        
+        # Fit algorithm weights to noisy data
+        fit_w = fit(X, concs)
+        noises = test_noise_scale * np.random.normal(0, noise_at_freq)
+
+        # Generate impedance at test concentration and add noise
+        X_test = freq_sweep_at_c(true_conc, weights=weights, freqs=freqs)
+        fig_true.add_trace(go.Scatter(x=freqs, y=X_test, name=f"True Conc={true_conc}",
+                                      line=dict(color="black", dash="dash")))
+        X_test = X_test + noises
+        fig_noisy.add_trace(go.Scatter(x=freqs, y=X_test, name=f"True Conc={true_conc}",
+                                      line=dict(color="black", dash="dash")))
+
+
+        # Predict noisy test concentration
+        agg_pred, preds = predict(X_test, fit_w, agg=gmean, exclude_fns=0, return_preds=True)
+
+        # *******************
+        # Front-end Rendering
+        # *******************
+
+        st.info("""
+        The data generation below is based on real-world data gathered from a strain 
+        of yeast known as Saccharomyces cerevisiae. A state-of-the-art nano-device
+        collects impedance curves of the yeast at various concentrations, and our 
+        novel algorithm is able to accurately predict the unknown concentration of a
+        separate yeast sample.
+        """)
+
+        f"""
+        ### True Concentration: {true_conc}\n
+        ### Algorithm Output: {agg_pred}
+        ***
+
+        The dotted black line is the concentration to be predicted.
+        """
+
+        col1, col2 = st.columns(2)
+        with col1:
+            st.plotly_chart(fig_noisy, use_container_width=True)
+
+        with col2:
+            st.plotly_chart(fig_true, use_container_width=False)
+
+    
+
+
+
+
+
+
+
 
 elif menu_sel == "Predict":
 
