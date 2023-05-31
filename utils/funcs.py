@@ -17,9 +17,10 @@ def I_out_sin(t, freq, I_amp, phase):
 
 @st.cache_data
 def get_V_out(V_in, I_out, Rf):
+    rail = 1.65
     V_out = V_in - I_out * Rf
-    V_out[V_out > 3.3] = 3.3
-    V_out[V_out < -3.3] = -3.3
+    V_out[V_out > rail] = rail
+    V_out[V_out < -rail] = -rail
     return V_out
 
 @st.cache_data
@@ -102,8 +103,8 @@ def get_Vr_out(t, cycle_num, freq, amp, R, C):
 def digitize(wave, num_levels):
     V_amp = 1.65
     
-    levels = 2 * V_amp * np.arange(num_levels + 1) / num_levels
-    return np.digitize(wave, levels) * (2 * V_amp / num_levels)
+    levels = (2 * V_amp * np.arange(num_levels + 1) - V_amp) / num_levels
+    return (np.digitize(wave, levels, right=False) - 1) * (2 * V_amp / num_levels)
 
 
 

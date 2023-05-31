@@ -99,12 +99,16 @@ if menu_sel == "Simulate":
             I_out = I_out_sin(t, freq, I_amp, phase)
             V_out = get_V_out(V_in, I_out, Rf)
             if digit:
-                V_out = digitize(V_out + V_amp, 4096)
+                V_out = digitize(V_out + V_amp, 4096) - V_amp
 
-            fig = dual_axis_fig(t, [V_in, V_out, I_out], 
+            fig = dual_axis_fig(t, [V_in, I_out], 
                                 "V_in and I_out: Sine Wave", "Time", 
-                                ["V_in", "V_out", "I_out"], 
-                                ["Volts", "Volts", "Amps"])
+                                ["V_in", "I_out"], 
+                                ["Volts", "Amps"])
+            mode = "markers" if digit else "lines"
+            fig.add_trace(
+                go.Scatter(x=t, y=V_out, name="V_out", mode=mode)
+            )
             st.plotly_chart(fig, use_container_width=True)
 
 
@@ -184,12 +188,17 @@ if menu_sel == "Simulate":
             Vc = V_in - Vr
             V_out = get_V_out(V_in, I_out, Rf)
             if digit:
-                V_out = digitize(V_out + V_amp, 4096)
+                V_out = digitize(V_out + V_amp, 4096) - V_amp
 
-            fig1 = dual_axis_fig(t, [V_in, V_out, I_out], 
+            fig1 = dual_axis_fig(t, [V_in, I_out], 
                                 "Triangle Wave Circuit Readings", "Time",
-                                ["V_in", "V_out", "I_out"],
-                                ["Volts", "Volts", "Amps"])
+                                ["V_in", "I_out"],
+                                ["Volts", "Amps"])
+            mode = "markers" if digit else "lines"
+            fig1.add_trace(
+                go.Scatter(x=t, y=V_out, name="V_out", mode=mode)
+            )
+            
             st.plotly_chart(fig1, use_container_width=True)
 
             fig2 = dual_axis_fig(t, [Vc],
