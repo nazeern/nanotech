@@ -16,6 +16,9 @@ st.title("Nano-integrated Technology \
 
 with st.sidebar:
 
+    "[![Repo](https://badgen.net/badge/icon/GitHub?icon=github&label)](https://github.com/nazeern/nanotech/blob/main/nitro_app.py) \
+    View Source Code"
+
     menu_sel = option_menu(
         "Main Menu",
         ["Simulate", "Preprocess", "Train", "Predict"],
@@ -274,6 +277,8 @@ elif menu_sel == "Train":
         # Predict noisy test concentration
         agg_pred, preds = predict(X_test, fit_w, agg=gmean, exclude_fns=0, return_preds=True)
 
+        fig_preds = avg_scatter(preds, true_conc, agg_pred, figsize=(6, 4))
+
         # *******************
         # Front-end Rendering
         # *******************
@@ -302,10 +307,12 @@ elif menu_sel == "Train":
         col1, col2 = st.columns(2)
         with col1:
             st.plotly_chart(fig_noisy, use_container_width=True)
+            st.expander("View Algorithm Internals") \
+              .pyplot(fig_preds, use_container_width=True)
 
         with col2:
             st.plotly_chart(fig_true, use_container_width=True)
-
+        
 
     elif source_sel == "Simulated Data":
         st.warning("Under construction...")

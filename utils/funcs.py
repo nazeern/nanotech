@@ -7,6 +7,7 @@ import plotly.express as px
 from scipy import signal
 from scipy.stats import hmean
 from scipy.stats.mstats import gmean
+import matplotlib.pyplot as plt
 
 
 
@@ -326,5 +327,18 @@ def plot_rows(M, x, y, label="", xlabel="", ylabel="", title=""):
 
     # Set y-axes titles
     fig.update_yaxes(title_text=ylabel, type="log")
+
+    return fig
+
+def avg_scatter(vals, true_val, pred_val, figsize):
+    fig, ax = plt.subplots(figsize=figsize)
+
+    plt.scatter([i for i in range(len(vals))], vals, s=75)
+    ax.axhline(y=true_val, color='r', linestyle='-', label="True")
+    ax.axhline(y=pred_val, color='r', linestyle='--', label="Predicted")
+    ax.set_title(f"Predictions at each frequency, true={true_val}", size=22)
+    ax.set_xlabel("Index of frequency", size=16)
+    ax.set_ylabel("Prediction (Concentration)", size=16)
+    ax.legend()
 
     return fig
