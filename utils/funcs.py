@@ -10,8 +10,10 @@ from scipy.stats.mstats import gmean
 import matplotlib.pyplot as plt
 
 
-
+# **********************
 # Simulation Functions
+# **********************
+
 @st.cache_data
 def I_out_sin(t, freq, I_amp, phase):
     return I_amp * np.sin(freq*(2*np.pi*t) + phase)
@@ -107,9 +109,58 @@ def digitize(wave, num_levels):
     levels = (2 * V_amp * np.arange(num_levels + 1) - V_amp) / num_levels
     return (np.digitize(wave, levels, right=False) - 1) * (2 * V_amp / num_levels)
 
+def generate_readings(R, C, start_freq, end_freq, cycle_num, form="sin", ex_cyc=0):
+    V_amp = 3.3 / 2
+    
+    freqs = []
+    res = []
+    curr_freq = start_freq
+    while curr_freq <= end_freq:
+        if form == "sin":
+            freqs.append(curr_freq)
+            w = 2 * np.pi * curr_freq
+            Z = complex(R, -1/(w*C))
 
+            t, V_in = generate_wave(curr_freq, V_amp, form, cycle_num=cycle_num)
+            phase = np.angle(- (V_amp / Z))
+            I_amp = V_amp / abs(Z)
 
+            I_out = I_out_sin(t, curr_freq, I_amp, phase)
+            
+            I_out_fft = 2 * np.fft.fft(I_out) / len(I_out)
+            I_out_fft = I_out_fft[:len(I_out_fft)//2]
+            I_crit = np.argmax(abs(I_out_fft))
+            
+            
+            Z_calc = V_amp / I_out_fft[I_crit]
+            Z_calc = complex(-Z_calc.imag, Z_calc.real)
+            res.append(Z_calc)
+            
+        
+        if form == "triangle":
+            freqs.append(curr_freq)
+            
+            t, V_in = generate_wave(curr_freq, V_amp, form, cycle_num=cycle_num)
+            Vr = get_Vr_out(t, cycle_num, freq, V_amp, R, C)
+            I_out = Vr / R
+            
+            n = V_in.size
+            if not ex_cyc: ex_cyc = cycle_num - 10
+            start_idx = int(np.rint(ex_cyc * n / cycle_num))
+            
+            I_out_dft = ftt(t[:-start_idx], I_out[start_idx:], 1000) * 3 / I_out[start_idx:].size
+            Z_tri = V_amp / I_out_dft
+            
+            res.append(Z_tri)
+        
+        curr_freq *= 2
+    
+    return freqs, res
+
+# **********************
 # Machine Learning Model Helpers
+# **********************
+
 def fit_log(X, y, noise=None):
     
     assert X.shape[0] == y.shape[0], "X dim and y dim must match"
@@ -199,8 +250,10 @@ def predict(X, w, model='nitro', agg=gmean, exclude_fns=0, return_preds=False):
             return agg(preds)
 
 
-
+# **********************
 # Sample Data Generation
+# **********************
+
 @st.cache_data
 def c_to_z(c, freq_idx, weights):
     """
@@ -263,9 +316,10 @@ def avg_noise(n_samples, noise_at_freq, m, n):
     
     return agg
 
-
-
+# **********************
 # Data Plotting
+# **********************
+
 def dual_axis_fig(x, y, title, xtitle, yname, ylabel):
     # Create figure with secondary y-axis
     fig = make_subplots(specs=[[{"secondary_y": True}]])
@@ -341,4 +395,30 @@ def avg_scatter(vals, true_val, pred_val, figsize):
     ax.set_ylabel("Prediction (Concentration)", size=16)
     ax.legend()
 
+    return fig
+
+def nyquist(freqs, Z):
+    fig = make_subplots()
+    fig.add_trace(
+        go.Scatter(x=np.rint(Z.real), y=np.rint(-Z.imag), mode="markers")
+    )
+    fig.update_xaxes(title_text="Z (Real)")
+    fig.update_yaxes(title_text="Negative Z (Imaginary)")
+    fig.update_layout(title_text="Nyquist Plot")
+    return fig
+
+def bode(freqs, Z):
+    fig = make_subplots(specs=[[{"secondary_y": True}]])
+    fig.add_trace(
+        go.Scatter(x=freqs, y=abs(Z), name="Magnitude")
+    )
+    fig.update_xaxes(type="log")
+    fig.update_yaxes(type="log", title_text="Magnitude", secondary_y=False)
+    fig.add_trace(
+        go.Scatter(x=freqs, y=np.angle(Z) / (2 * np.pi) * 360, name="Phase"),
+        secondary_y=True
+    )
+    fig.update_xaxes(title_text="Freq (Hz)")
+    fig.update_yaxes(title_text="Phase (deg)", secondary_y=True)
+    fig.update_layout(title_text="Bode Plot")
     return fig
