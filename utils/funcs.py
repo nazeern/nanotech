@@ -254,7 +254,7 @@ def predict(X, w, model='nitro', agg=gmean, exclude_fns=0, return_preds=False):
 # Sample Data Generation
 # **********************
 
-@st.cache_data
+# @st.cache_data
 def c_to_z(c, freq_idx, weights):
     """
     Wrapper utility function mapping (concentration) ==> (impedance) at a given frequency.
@@ -262,7 +262,7 @@ def c_to_z(c, freq_idx, weights):
     """
     return predict_log(c, weights[freq_idx])
 
-@st.cache_data
+# @st.cache_data
 def freq_sweep_at_c(c, weights, freqs):
     """
     Mimics a biosensing experiment at a single concentration c > 0. Note that the sweep doesn't impart any error.
@@ -276,7 +276,7 @@ def freq_sweep_at_c(c, weights, freqs):
     assert c > 0
     return np.array([c_to_z(c, i, weights) for i in range(len(freqs))])
 
-@st.cache_data
+# @st.cache_data
 def generate_experiment(concs, weights, freqs):
     """
     Generates an (m x n) data matrix with impedance values.
