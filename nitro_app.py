@@ -331,8 +331,8 @@ elif menu_sel == "Train":
                 C = nC * 1e-9
 
             with st.spinner("Spooling Virtual Device..."):
-                freqs, Z = generate_readings(R=R, C=C, start_freq=100, end_freq=10_000_000, cycle_num=20000, form="sin",
-                                ex_cyc=20000-1)
+                freqs, Z = generate_readings(R=R, C=C, start_freq=100, end_freq=10_000_000, 
+                                             cycle_num=5, form="sin", ex_cyc=5-1)
 
             Z = np.array(Z)
             bode_fig = bode(freqs, Z)
