@@ -1,10 +1,16 @@
 import streamlit as st
 import numpy as np
+import pandas as pd
 import plotly.express as px
 from streamlit_option_menu import option_menu
 import warnings
 from utils.funcs import *
 
+def calculate_d_edl():
+    return np.sqrt((k_b * T * e_0 * e_r) / (2 * (z * e)**2 * N_a * C_0))
+
+def calculate_edl_capacitance(d_edl):
+    return e_0 * e_r / d_edl
 
 st.set_page_config(page_title="Impedance Analyzer",
                    page_icon="images/logo.png",
@@ -324,11 +330,53 @@ elif menu_sel == "Train":
 
         if curve_sel == "Single Curve":
             with st.sidebar:
+                advanced_settings = st.checkbox("Advanced Settings")
                 R = st.number_input(label="Resistance (Ohms)", min_value=1,
                             max_value=80_000, value=80000, step=100)
-                nC = st.number_input(label="Capacitance (nF)", min_value=1,
-                                max_value=1000, value=1, step=100)
-                C = nC * 1e-9
+                if advanced_settings:
+                    with st.form("calc_cap_form"):
+                        submitted = st.form_submit_button("Update")
+                        #Nanotube geometry
+                        CNT_radius = st.number_input("CNT Radius (m)", value=5.0E-09, format="%f") #m
+                        CNT_height = st.number_input("CNT Height", value=2.5E-04, format="%f") #m
+
+                        #Nanotube forest geometry
+                        nanostructure_width = st.number_input("Nanostructure Width", value=3.0E-06, format="%f") #m
+                        nanostructure_length = st.number_input("Nanostructure Length", value=2.54E-02, format="%f") #m
+                        gap_between_nanostructures = st.number_input("Gap Between Nanostructures", value=2.0E-06, format="%f") #m
+
+                        #Chip geometry
+                        chip_length = st.number_input("Chip Length", value=2.54E-02, format="%f") #1 inch
+                        chip_width = st.number_input("Chip Width", value=2.54E-02, format="%f") #1 inch
+
+                        #Dielectric properties
+                        epsilon_r = st.number_input("Epsilon R", 1000, format="%f") #average dielectric constant between two forests
+                        E_breakdown = st.number_input("E Breakdown", value=1.2E+09, format="%f") # dielectric breakdown E-field [V/m]
+
+                        #Substrate geometry
+                        Si_thickness = st.number_input("Si Thickness", value=3.0E-04, format="%f") #m
+                        SiO2_thickness = st.number_input("SiO2 Thickness", value=2.1E-06, format="%f") #m
+                        Metal_1_thickness = st.number_input("Metal 1 Thickness", value=1.0E-07, format="%f") #m
+                        Metal_2_thickness = st.number_input("Metal 2 Thickness", value=1.0E-08, format="%f") #m
+                        Catalyst_thickness = st.number_input("Catalyst Thickness", value=1.0E-08, format="%f") #m
+
+                        #Physical constants (SI units)
+                        e = st.number_input("Electron Charge", value=1.602e-19, format="%f")  #electron charge
+                        z = st.number_input("Electrons / Surface Particle", value=1, format="%f") #electrons/surface particle
+                        C = st.number_input("C", value=1.0E-15, format="%f")
+                        C_0 = st.number_input("C_0", value=1.0E-12, format="%f")
+                        e_r = st.number_input("Dielectric Constant", value=78.49, format="%f") #dielctric constant
+                        e_0 = st.number_input("Vacuum Permittivity", value=8.854E-12, format="%f") #vacuum permittivity
+                        k_b= st.number_input("Boltzmann Constant", value=1.38E-23, format="%f") #Boltzmann const
+                        T = st.number_input("Temperature", value=298.1, format="%f") #room temperature
+                        V_zeta = st.number_input("V_zeta", value=5.0E-02, format="%f")
+                        N_a = st.number_input("N_a", value=6E+23, format="%f")
+                    C = calculate_edl_capacitance(calculate_d_edl())
+                    st.write("Capacitance (nF): ", C * 1e9)
+                else:
+                    nC = st.number_input(label="Capacitance (nF)", min_value=1,
+                                    max_value=1000, value=1, step=100)
+                    C = nC * 1e-9
 
             with st.spinner("Spooling Virtual Device..."):
                 freqs, Z = generate_readings(R=R, C=C, start_freq=100, end_freq=10_000_000, 
@@ -364,10 +412,10 @@ elif menu_sel == "Train":
                 R = st.number_input(label="Resistance (Ohms)", min_value=1,
                             max_value=80_000, value=80000, step=100)
                 with st.form("cap_form"):
+                    submitted = st.form_submit_button("Update")
                     nC_vals = [ st.number_input(label=f"Capacitance {i+1} (nF)", min_value=1,
                                     max_value=1000, value=i+1, step=100, key=i)
                     for i in range(NUM_CAPS)]
-                    submitted = st.form_submit_button("Update")
                 C_vals = [nC * 1e-9 for nC in nC_vals]
 
             Z_vals = []
@@ -398,7 +446,10 @@ elif menu_sel == "Train":
 
 
     elif source_sel == "Uploaded Data":
-        st.warning("Under construction...")
+        uploaded_file = st.file_uploader("Import CSV")
+        if uploaded_file:
+            arr = pd.read_csv(uploaded_file).to_numpy()
+            arr
 
 
 
