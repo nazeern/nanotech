@@ -338,39 +338,39 @@ elif menu_sel == "Train":
                         submitted = st.form_submit_button("Update")
                         #Nanotube geometry
                         CNT_radius = st.number_input("CNT Radius (m)", value=5.0E-09, format="%f") #m
-                        CNT_height = st.number_input("CNT Height", value=2.5E-04, format="%f") #m
+                        CNT_height = st.number_input("CNT Height (m)", value=2.5E-04, format="%f") #m
 
                         #Nanotube forest geometry
-                        nanostructure_width = st.number_input("Nanostructure Width", value=3.0E-06, format="%f") #m
-                        nanostructure_length = st.number_input("Nanostructure Length", value=2.54E-02, format="%f") #m
-                        gap_between_nanostructures = st.number_input("Gap Between Nanostructures", value=2.0E-06, format="%f") #m
+                        nanostructure_width = st.number_input("Nanostructure Width (m)", value=3.0E-06, format="%f") #m
+                        nanostructure_length = st.number_input("Nanostructure Length (m)", value=2.54E-02, format="%f") #m
+                        gap_between_nanostructures = st.number_input("Gap Between Nanostructures (m)", value=2.0E-06, format="%f") #m
 
                         #Chip geometry
-                        chip_length = st.number_input("Chip Length", value=2.54E-02, format="%f") #1 inch
-                        chip_width = st.number_input("Chip Width", value=2.54E-02, format="%f") #1 inch
+                        chip_length = st.number_input("Chip Length (m)", value=2.54E-02, format="%f") #1 inch
+                        chip_width = st.number_input("Chip Width (m)", value=2.54E-02, format="%f") #1 inch
 
                         #Dielectric properties
-                        epsilon_r = st.number_input("Epsilon R", 1000, format="%f") #average dielectric constant between two forests
-                        E_breakdown = st.number_input("E Breakdown", value=1.2E+09, format="%f") # dielectric breakdown E-field [V/m]
+                        epsilon_r = st.number_input("Epsilon R", 1000) #average dielectric constant between two forests
+                        E_breakdown = st.number_input("E Breakdown (V/m)", value=1.2E+09, format="%f") # dielectric breakdown E-field [V/m]
 
                         #Substrate geometry
-                        Si_thickness = st.number_input("Si Thickness", value=3.0E-04, format="%f") #m
-                        SiO2_thickness = st.number_input("SiO2 Thickness", value=2.1E-06, format="%f") #m
-                        Metal_1_thickness = st.number_input("Metal 1 Thickness", value=1.0E-07, format="%f") #m
-                        Metal_2_thickness = st.number_input("Metal 2 Thickness", value=1.0E-08, format="%f") #m
-                        Catalyst_thickness = st.number_input("Catalyst Thickness", value=1.0E-08, format="%f") #m
+                        Si_thickness = st.number_input("Si Thickness (m)", value=3.0E-04, format="%f") #m
+                        SiO2_thickness = st.number_input("SiO2 Thickness (m)", value=2.1E-06, format="%f") #m
+                        Metal_1_thickness = st.number_input("Metal 1 Thickness (m)", value=1.0E-07, format="%f") #m
+                        Metal_2_thickness = st.number_input("Metal 2 Thickness (m)", value=1.0E-08, format="%f") #m
+                        Catalyst_thickness = st.number_input("Catalyst Thickness (m)", value=1.0E-08, format="%f") #m
 
                         #Physical constants (SI units)
                         e = st.number_input("Electron Charge", value=1.602e-19, format="%f")  #electron charge
-                        z = st.number_input("Electrons / Surface Particle", value=1, format="%f") #electrons/surface particle
+                        z = st.number_input("Electrons / Surface Particle", value=1) #electrons/surface particle
                         C = st.number_input("C", value=1.0E-15, format="%f")
                         C_0 = st.number_input("C_0", value=1.0E-12, format="%f")
                         e_r = st.number_input("Dielectric Constant", value=78.49, format="%f") #dielctric constant
                         e_0 = st.number_input("Vacuum Permittivity", value=8.854E-12, format="%f") #vacuum permittivity
-                        k_b= st.number_input("Boltzmann Constant", value=1.38E-23, format="%f") #Boltzmann const
+                        k_b= st.number_input("Boltzmann Constant", value=1.38E-23, format="%f", disabled=True) #Boltzmann const
                         T = st.number_input("Temperature", value=298.1, format="%f") #room temperature
                         V_zeta = st.number_input("V_zeta", value=5.0E-02, format="%f")
-                        N_a = st.number_input("N_a", value=6E+23, format="%f")
+                        N_a = st.number_input("Avogadro's Number", value=6E+23, format="%f", disabled=True)
                     C = calculate_edl_capacitance(calculate_d_edl())
                     st.write("Capacitance (nF): ", C * 1e9)
                 else:
