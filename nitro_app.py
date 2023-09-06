@@ -305,7 +305,6 @@ elif menu_sel == "Train":
         f"""
         ### True Concentration: {true_conc}\n
         ### Algorithm Output: {agg_pred}
-        ***
         """
 
         # with st.expander("Important Details"):
@@ -363,7 +362,7 @@ elif menu_sel == "Train":
                         #Physical constants (SI units)
                         e = st.number_input("Electron Charge", value=1.602e-19, format="%f")  #electron charge
                         z = st.number_input("Electrons / Surface Particle", value=1) #electrons/surface particle
-                        C = st.number_input("C", value=1.0E-15, format="%f")
+                        C = st.number_input("C", value=1.0E-15, format="%f") # nmols/liter
                         C_0 = st.number_input("C_0", value=1.0E-12, format="%f")
                         e_r = st.number_input("Dielectric Constant", value=78.49, format="%f") #dielctric constant
                         e_0 = st.number_input("Vacuum Permittivity", value=8.854E-12, format="%f") #vacuum permittivity
