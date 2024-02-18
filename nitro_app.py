@@ -379,7 +379,7 @@ elif menu_sel == "Train":
 
             with st.spinner("Spooling Virtual Device..."):
                 freqs, Z = generate_readings(R=R, C=C, start_freq=100, end_freq=10_000_000, 
-                                             cycle_num=5, form="sin", ex_cyc=5-1)
+                                             cycle_num=5, form="sin", ex_cyc=5-1, save_csv=False)
 
             Z = np.array(Z)
             bode_fig = bode(freqs, Z)
@@ -447,8 +447,41 @@ elif menu_sel == "Train":
     elif source_sel == "Uploaded Data":
         uploaded_file = st.file_uploader("Import CSV")
         if uploaded_file:
-            arr = pd.read_csv(uploaded_file).to_numpy()
-            arr
+            df = pd.read_csv(uploaded_file)
+            column_names = df.columns.to_list()
+            num_cols = len(column_names)
+            assert num_cols % 3 == 0, "Expected columns in groups of 3 (t, V_in, I_out)"
+
+            freqs = []
+            Z = []
+
+            for i in range(0, len(column_names), 3):
+                freq = int(column_names[i].split("_")[-1])
+                t = df.iloc[:,i].to_numpy()
+                V_in = df.iloc[:,i+1].to_numpy()
+                I_out = df.iloc[:,i+2].to_numpy()
+                V_amp = np.max(V_in)
+
+                I_out_fft = 2 * np.fft.fft(I_out) / len(I_out)
+                I_out_fft = I_out_fft[:len(I_out_fft)//2]
+                I_crit = np.argmax(abs(I_out_fft))
+            
+            
+                Z_calc = V_amp / I_out_fft[I_crit]
+                Z_calc = complex(-Z_calc.imag, Z_calc.real)
+                Z.append(Z_calc)
+                freqs.append(freq)
+
+            Z = np.array(Z)
+            bode_fig = bode(freqs, Z)
+            nyquist_fig = nyquist(freqs, Z)
+        
+            # Render data
+            col1, col2 = st.columns(2)
+            with col1:
+                st.plotly_chart(nyquist_fig, use_container_width=True)
+            with col2:
+                st.plotly_chart(bode_fig, use_container_width=True)
 
 
 

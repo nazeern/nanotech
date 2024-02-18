@@ -109,12 +109,13 @@ def digitize(wave, num_levels):
     levels = (2 * V_amp * np.arange(num_levels + 1) - V_amp) / num_levels
     return (np.digitize(wave, levels, right=False) - 1) * (2 * V_amp / num_levels)
 
-def generate_readings(R, C, start_freq, end_freq, cycle_num, form="sin", ex_cyc=0):
+def generate_readings(R, C, start_freq, end_freq, cycle_num, form="sin", ex_cyc=0, save_csv=False):
     V_amp = 3.3 / 2
     
     freqs = []
     res = []
     curr_freq = start_freq
+    csv_cols = []
     while curr_freq <= end_freq:
         if form == "sin":
             freqs.append(curr_freq)
@@ -127,6 +128,9 @@ def generate_readings(R, C, start_freq, end_freq, cycle_num, form="sin", ex_cyc=
 
             I_out = I_out_sin(t, curr_freq, I_amp, phase)
             
+            if save_csv:
+                csv_cols.extend((t, V_in, I_out))
+
             I_out_fft = 2 * np.fft.fft(I_out) / len(I_out)
             I_out_fft = I_out_fft[:len(I_out_fft)//2]
             I_crit = np.argmax(abs(I_out_fft))
@@ -154,6 +158,11 @@ def generate_readings(R, C, start_freq, end_freq, cycle_num, form="sin", ex_cyc=
             res.append(Z_tri)
         
         curr_freq *= 2
+
+    if save_csv:
+        assert 3 * len(freqs) == len(csv_cols), "We should have 3 columns per frequency"
+        header = ",".join([f"t_{freq},V_in_{freq},I_out_{freq}" for freq in freqs])
+        np.savetxt("single_curve.csv", np.array(csv_cols).T, delimiter=",", header=header, comments="")
     
     return freqs, res
 
