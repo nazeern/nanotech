@@ -445,6 +445,22 @@ elif menu_sel == "Train":
 
 
     elif source_sel == "Uploaded Data":
+
+        with st.expander("Please Read: CSV Format Details"):
+            """
+            The CSV input should contain experiment values taken at different frequencies.
+            For each frequency, we require three inputs: time, input voltage, and output current.
+            These inputs should be in the columns of the CSV file, and should obviously be the same length.
+
+            For example, if you run three experiments at frequencies 100, 1000, and 10000, you will have 9 columns.
+            The first three columns are t_100, V_in_100, I_out_100. 
+            The next three columns are t_1000, V_in_1000, I_out_1000, and so on.
+
+            After uploading a correctly formatted CSV, the software will provide the entire electrochemical impedance
+            spectroscopy, calculating impedance and displaying a Bode and Nyquist plot. Don't worry, both of these are just different
+            ways to graph impedance.
+            """
+
         uploaded_file = st.file_uploader("Import CSV")
         if uploaded_file:
             df = pd.read_csv(uploaded_file)
